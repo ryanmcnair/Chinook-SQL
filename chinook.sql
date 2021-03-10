@@ -93,14 +93,121 @@ from PlaylistTrack pt
 	on pt.PlaylistId = p.PlaylistId
 		group by p.Name
 --16. `tracks_no_id.sql`: Provide a query that shows all the Tracks, but displays no IDs. The result should include the Album name, Media type and Genre.
+select t.Name, m.Name, g.Name
+from Track t
+	join MediaType m
+	on t.MediaTypeId = m.MediaTypeId
+	join Genre g
+	on t.GenreId = g.GenreId
 --17. `invoices_line_item_count.sql`: Provide a query that shows all Invoices but includes the # of invoice line items.
+select i.*, (select Count(il.InvoiceLineId)
+				from InvoiceLine il
+				where il.InvoiceId = i.InvoiceId) InvoiceLineItems
+from Invoice i
 --18. `sales_agent_total_sales.sql`: Provide a query that shows total sales made by each sales agent.
+select sum(i.total) Totals, 
+(
+	select concat(e.FirstName, ' ', e.LastName) SalesAgent
+		from Employee e
+		where e.EmployeeId = c.SupportRepId
+)
+from Invoice i
+	join Customer c
+	on c.CustomerId = i.CustomerId
+group by c.SupportRepId
+
 --19. `top_2009_agent.sql`: Which sales agent made the most in sales in 2009? HINT: [TOP](https://docs.microsoft.com/en-us/sql/t-sql/queries/top-transact-sql)
+select top(1) sum(i.total) Totals, 
+(
+	select concat(e.FirstName, ' ', e.LastName) SalesAgent
+		from Employee e
+		where e.EmployeeId = c.SupportRepId
+)
+from Invoice i
+	join Customer c
+	on c.CustomerId = i.CustomerId
+where i.InvoiceDate like '%2009%'
+group by c.SupportRepId
+order by Totals desc
+ 
 --20. `top_agent.sql`: Which sales agent made the most in sales over all?
+select top(1) sum(i.total) Totals, 
+(
+	select concat(e.FirstName, ' ', e.LastName) SalesAgent
+		from Employee e
+		where e.EmployeeId = c.SupportRepId
+)
+from Invoice i
+	join Customer c
+	on c.CustomerId = i.CustomerId
+group by c.SupportRepId
+order by Totals desc
+
 --21. `sales_agent_customer_count.sql`: Provide a query that shows the count of customers assigned to each sales agent.
+select count(*) NumberOfCustomers, concat(e.firstName, ' ', e.LastName) SalesAgent
+from Customer c
+	join Employee e
+	on c.SupportRepId = e.EmployeeId
+group by e.firstName, e.LastName
+order by NumberOfCustomers desc
+
 --22. `sales_per_country.sql`: Provide a query that shows the total sales per country.
+select sum(i.total) CountryTotal, i.BillingCountry
+from invoice i
+group by i.BillingCountry
+order by CountryTotal desc
+
 --23. `top_country.sql`: Which country's customers spent the most?
+select Top(1) sum(i.total) CountryTotal, i.BillingCountry
+from invoice i
+group by i.BillingCountry
+order by CountryTotal desc
+
 --24. `top_2013_track.sql`: Provide a query that shows the most purchased track of 2013.
+--join invoice for date, invoiceline for trackId & track for the tracks name 
+select Top(1) sum(i.total) SalesTotal, t.name
+from Invoice i
+	join InvoiceLine il
+	on i.InvoiceId = il.InvoiceId
+	join Track t
+	on il.TrackId = t.TrackId
+where Year(i.InvoiceDate) = 2013
+group by t.Name
+order by SalesTotal desc
+
 --25. `top_5_tracks.sql`: Provide a query that shows the top 5 most purchased songs.
+select Top(5) sum(i.total) SalesTotal, t.name
+from Invoice i
+	join InvoiceLine il
+	on i.InvoiceId = il.InvoiceId
+	join Track t
+	on il.TrackId = t.TrackId
+group by t.Name
+order by SalesTotal desc
+
 --26. `top_3_artists.sql`: Provide a query that shows the top 3 best selling artists.
+--invoice for sales totals, invoiceline for trackId, track for AlbumId, album for ArtistId & Artist for Artist
+select top(3) sum(i.total) SalesTotal, ar.Name
+from Invoice i
+	join InvoiceLine il
+	on i.InvoiceId = il.InvoiceId
+	join Track t
+	on il.TrackId = t.TrackId
+	join Album al
+	on t.AlbumId = al.AlbumId
+	join Artist ar
+	on  al.ArtistId = ar.ArtistId
+group by ar.Name
+order by SalesTotal desc
+
 --27. `top_media_type.sql`: Provide a query that shows the most purchased Media Type.
+select top(1) sum(i.total) SalesTotal, m.Name
+from Invoice i
+	join InvoiceLine il
+	on i.InvoiceId = il.InvoiceId
+	join Track t
+	on il.TrackId = t.TrackId
+	join MediaType m
+	on t.MediaTypeId = m.MediaTypeId
+group by m.Name
+order by SalesTotal desc
